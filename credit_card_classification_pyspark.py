@@ -70,11 +70,9 @@ def run_pyspark(path: str):
     multi_evaluator = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction", metricName="accuracy")
     accuracy = multi_evaluator.evaluate(predictions)
 
-    print(f"Test rows: {predictions.count()}")
-    print(f"AUC: {auc:.4f}")
-    print(f"Accuracy: {accuracy:.4f}")
-
+    rows = int(predictions.count())
     spark.stop()
+    return {"rows": rows, "auc": float(auc), "accuracy": float(accuracy)}
 
 
 def run_sklearn(path: str):
@@ -116,9 +114,7 @@ def run_sklearn(path: str):
     auc = roc_auc_score(y_test, probs) if probs is not None and len(set(y_test)) > 1 else float("nan")
     acc = accuracy_score(y_test, preds)
 
-    print(f"Test rows: {len(X_test)}")
-    print(f"AUC: {auc:.4f}")
-    print(f"Accuracy: {acc:.4f}")
+    return {"rows": len(X_test), "auc": float(auc), "accuracy": float(acc)}
 
 
 def main():
@@ -129,13 +125,22 @@ def main():
 
     if USE_PYSPARK:
         try:
-            run_pyspark(str(data_file))
+            metrics = run_pyspark(str(data_file))
+            print(f"Test rows: {metrics['rows']}")
+            print(f"AUC: {metrics['auc']:.4f}")
+            print(f"Accuracy: {metrics['accuracy']:.4f}")
         except Exception as e:
             print("PySpark failed to run; falling back to scikit-learn. Error:", e)
-            run_sklearn(str(data_file))
+            metrics = run_sklearn(str(data_file))
+            print(f"Test rows: {metrics['rows']}")
+            print(f"AUC: {metrics['auc']:.4f}")
+            print(f"Accuracy: {metrics['accuracy']:.4f}")
     else:
         print("PySpark not available in this environment — using scikit-learn fallback.")
-        run_sklearn(str(data_file))
+        metrics = run_sklearn(str(data_file))
+        print(f"Test rows: {metrics['rows']}")
+        print(f"AUC: {metrics['auc']:.4f}")
+        print(f"Accuracy: {metrics['accuracy']:.4f}")
 
 
 if __name__ == "__main__":
