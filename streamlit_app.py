@@ -5,6 +5,29 @@ st.title("Credit Card Approval — Model Trainer")
 
 DATA_PATH = "Credit_Card_Approval_10000_70_30.csv"
 
+PRETRAINED_MODEL = Path("pretrained_model.joblib")
+PRETRAINED_META = Path("pretrained_model_meta.json")
+
+if PRETRAINED_MODEL.exists() and PRETRAINED_META.exists():
+    import json
+    import joblib
+    try:
+        meta = json.loads(PRETRAINED_META.read_text())
+        st.success("Loaded pretrained model")
+        st.metric("Rows (test)", meta.get("rows"))
+        try:
+            st.metric("AUC", f"{meta.get('auc', float('nan')):.4f}")
+        except Exception:
+            st.metric("AUC", meta.get('auc'))
+        try:
+            st.metric("Accuracy", f"{meta.get('accuracy', float('nan')):.4f}")
+        except Exception:
+            st.metric("Accuracy", meta.get('accuracy'))
+        if st.button("Show raw metadata"):
+            st.json(meta)
+    except Exception as e:
+        st.warning(f"Failed to load pretrained metadata: {e}")
+
 try:
     from credit_card_classification_pyspark import run_pyspark, run_sklearn, USE_PYSPARK
 except Exception as e:
